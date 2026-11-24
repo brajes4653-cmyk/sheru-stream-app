@@ -85,7 +85,6 @@
     navigator.serviceWorker.register('sw.js');
   }
 
-  // Server Wake-up
   fetch(API_BASE + "/")
     .then(r => r.json())
     .then(() => {
@@ -97,7 +96,6 @@
       document.getElementById("server-status").textContent = "Waking Server...";
     });
 
-  // IndexedDB for Offline Storage
   const req = indexedDB.open("SheruOfflineDB", 1);
   req.onupgradeneeded = e => {
     db = e.target.result;
@@ -145,28 +143,24 @@
     }
   }
 
-  async function playStream(id, type, titleEnc, thumb) {
+  function playStream(id, type, titleEnc, thumb) {
     const title = unescape(titleEnc);
     const audioEl = document.getElementById("audio-player");
     const videoEl = document.getElementById("video-player");
+    const directPlayUrl = `${API_BASE}/play?id=${id}&type=${type}`;
 
     if (type === "audio") {
       closeVideo();
       document.getElementById("mini-player").style.display = "flex";
-      document.getElementById("now-playing").textContent = "लोड हो रहा है: " + title;
-      const res = await fetch(`${API_BASE}/stream?id=${id}&type=audio`);
-      const data = await res.json();
-      audioEl.src = data.stream_url;
+      document.getElementById("now-playing").textContent = "बज रहा है: " + title;
+      audioEl.src = directPlayUrl;
       audioEl.play();
-      document.getElementById("now-playing").textContent = title;
       setupMediaSession(title, thumb);
     } else {
       audioEl.pause();
       document.getElementById("mini-player").style.display = "none";
       document.getElementById("video-container").style.display = "block";
-      const res = await fetch(`${API_BASE}/stream?id=${id}&type=video`);
-      const data = await res.json();
-      videoEl.src = data.stream_url;
+      videoEl.src = directPlayUrl;
       videoEl.play();
     }
   }
@@ -193,9 +187,7 @@
     btn.textContent = "Saving...";
     btn.disabled = true;
     try {
-      const res = await fetch(`${API_BASE}/stream?id=${id}&type=audio`);
-      const data = await res.json();
-      const mediaRes = await fetch(data.stream_url);
+      const mediaRes = await fetch(`${API_BASE}/play?id=${id}&type=audio`);
       const blob = await mediaRes.blob();
 
       const tx = db.transaction("media", "readwrite");
